@@ -1,0 +1,142 @@
+---
+- name: FMC REST API
+  hosts: localhost
+  gather_facts: true
+  vars_files:
+    - vars.yml
+    - credentials.yaml
+  tasks:
+    - name: Get Access Token
+      uri:
+        url: https://{{ ansible_host  }}/{{ auth_path }}
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Connection: "keep-alive"
+        validate_certs: no
+        user: "{{fmc_username}}"
+        password: "{{fmc_password}}"
+        force: yes
+        force_basic_auth: yes
+        status_code: 204
+        return_content: yes
+      register: auth
+    - name: get token
+      set_fact:
+        auth_token: "{{auth.x_auth_access_token}}"
+    - name: GET Device Details
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/devices/devicerecords"
+        method: GET
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [200,400]
+        body_format: json
+      register: getdevice
+    - name: Get Device List
+      set_fact:
+        devicelist: "{{ getdevice.json | json_query('items[*].id' ) | list}}"
+    - name: Create Network Object for Default Route
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/object/networks"
+        method: POST
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [201]
+        body_format: json
+        body:
+          name: "default_nw"
+          value: "0.0.0.0/0"
+          type: "Network"
+      register: getdefaultnw
+    - name: Create Inside GW
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/object/hosts"
+        method: POST
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [201]
+        body_format: json
+        body:
+          name: "{{gcpinside.name}}"
+          value: "{{gcpinside.ip}}"
+          type: "Host"
+      register: insidegw
+    - name: Create Outside GW
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/object/hosts"
+        method: POST
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [201]
+        body_format: json
+        body:
+          name: "{{gcpoutside.name}}"
+          value: "{{gcpoutside.ip}}"
+          type: "Host"
+      register: outsidegw
+    - name: Create Default Route
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/devices/devicerecords/{{item}}/routing/ipv4staticroutes"
+        method: POST
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [201]
+        body_format: json
+        body:
+          interfaceName: "OUTSIDE"
+          type: "IPv4StaticRoute"
+          gateway:
+            object:
+              type: "{{outsidegw.json.type}}"
+              id: "{{outsidegw.json.id}}"
+              name: "{{outsidegw.json.name}}"
+          selectedNetworks:
+            - type: "{{getdefaultnw.json.type}}"
+              id: "{{getdefaultnw.json.id}}"
+              name: "{{getdefaultnw.json.name}}"
+      with_list: "{{devicelist}}"
+
+    - name: Get Deployments
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/deployment/deployabledevices"
+        method: GET
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [200,400]
+        body_format: json
+      register: deployable
+    - name: Get Timestamp
+      set_fact:
+        stamp: "{{ item.version}}"
+      with_list: "{{deployable.json | json_query('items[]')}}"
+    - name: Get Device List
+      set_fact:
+        devicelist: "{{ getdevice.json | json_query('items[*].id' ) | list}}"
+    - name: Deploy Changes
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/deployment/deploymentrequests"
+        method: POST
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [202,200]
+        body_format: json
+        body:
+          type: "DeploymentRequest"
+          version:  "{{ stamp}}"
+          ignoreWarning: true
+          deviceList: "{{devicelist}}"

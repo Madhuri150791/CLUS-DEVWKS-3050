@@ -1,0 +1,5 @@
+{%- for item in policy_array -%}
+  {%- if item.name == 'CLUS2022' -%}
+    {{ item.id }}
+  {%- endif -%}
+{%- endfor -%}

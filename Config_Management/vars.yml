@@ -1,0 +1,13 @@
+ftds:
+  - name: "FTD1"
+    ip: "10.121.10.6"
+zones:
+  - name: "INSIDE"
+  - name: "OUTSIDE"
+gcpinside:
+    ip: "10.121.12.1"
+    name: "inside-gw"
+gcpoutside:
+    ip: "10.121.13.1"
+    name: "outside-gw"
+

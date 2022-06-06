@@ -1,0 +1,91 @@
+---
+- name: FMC REST API
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - vars.yml
+    - credentials.yaml
+  tasks:
+    - name: Get Access Token
+      uri:
+        url: https://{{ ansible_host  }}/{{ auth_path }}
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Connection: "keep-alive"
+        validate_certs: no
+        user: "{{fmc_username}}"
+        password: "{{fmc_password}}"
+        force: yes
+        force_basic_auth: yes
+        status_code: 204
+        return_content: yes
+      register: auth
+    - name: get token
+      set_fact:
+        auth_token: "{{auth.x_auth_access_token}}"
+    - name: GET Access Policy
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/policy/accesspolicies?name=CLUS2022"
+        method: GET
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [200,400,404]
+        body_format: json
+      register: getaccesspolicies
+      ignore_errors: yes
+    - name: get policy_json
+      set_fact:
+        policy_array: "{{getaccesspolicies.json | json_query('items[]')}}"
+      ignore_errors: yes
+    - name: get policy_id
+      set_fact:
+        policy_id: "{{lookup('template','get_policy_id.j2') | trim}}"
+      ignore_errors: yes
+    - name: Create Access Policy
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/policy/accesspolicies"
+        method: POST
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [201,400]
+        body_format: json
+        body:
+          type: "AccessPolicy"
+          name: "CLUS2022"
+          defaultAction: { "action": "BLOCK" }
+      register: postaccesspolicies
+      when: getaccesspolicies.json.paging.count == 0
+      ignore_errors: yes
+    - name: get policy
+      set_fact:
+        policy: "{% if getaccesspolicies.status == 200 %}{{ policy_id }}{% endif  %}"
+      when: getaccesspolicies.status == 200
+    - name: get policy
+      set_fact:
+        policy: "{% if postaccesspolicies.status == 201 %}{{ postaccesspolicies.json.id}}{% endif  %}"
+      when: getaccesspolicies.json.paging.count == 0
+    - name: Register Devices
+      uri:
+        url: https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/devices/devicerecords
+        method: POST
+        validate_certs: no
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        body_format: json
+        body:
+          name: "{{item.name}}"
+          hostName: "{{item.ip}}"
+          regKey: "12345"
+          type: "Device"
+          license_caps: ["BASE", "MALWARE","URLFilter","THREAT"]
+          performanceTier: "Legacy"
+          accessPolicy: {id: "{{ policy }}",type: "AccessPolicy"}
+        status_code: 202
+      loop: "{{ftds}}"
+      register: postdevice

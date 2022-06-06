@@ -1,0 +1,7 @@
+{%- for item in zone_array -%}
+  {%- if item.name == 'INSIDE' -%}
+    {{ item.id }}
+{%- elif item.name == 'OUTSIDE' -%}
+    {{ item.id }}
+  {%- endif -%}
+{%- endfor -%}

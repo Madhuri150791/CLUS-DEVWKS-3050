@@ -1,0 +1,5 @@
+{
+    "EULA": "accept",
+    "Hostname": "FMC-Production",
+    "AdminPassword": "M@dhuri123"
+}

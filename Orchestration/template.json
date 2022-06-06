@@ -1,0 +1,9 @@
+{
+  "EULA": "accept",
+  "AdminPassword": "Admin123",
+  "Hostname": "DEVWKS3050",
+  "FmcIp": "{{fmcip}}",
+  "FmcRegKey":"12345",
+  "FirewallMode": "routed",
+  "ManageLocally":"No"
+}

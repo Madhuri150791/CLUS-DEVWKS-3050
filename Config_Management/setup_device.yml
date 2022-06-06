@@ -1,0 +1,184 @@
+---
+- name: FMC REST API
+  hosts: localhost
+  gather_facts: true
+  vars_files:
+    - vars.yml
+    - credentials.yaml
+  tasks:
+    - name: Get Access Token
+      uri:
+        url: https://{{ ansible_host  }}/{{ auth_path }}
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Connection: "keep-alive"
+        validate_certs: no
+        user: "{{fmc_username}}"
+        password: "{{fmc_password}}"
+        force: yes
+        force_basic_auth: yes
+        status_code: 204
+        return_content: yes
+      register: auth
+    - name: get token
+      set_fact:
+        auth_token: "{{auth.x_auth_access_token}}"
+    - name: GET Device Details
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/devices/devicerecords"
+        method: GET
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [200,400]
+        body_format: json
+
+      register: getdevice
+    - name: GET Physical Interfaces
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/devices/devicerecords/{{item.id}}/physicalinterfaces"
+        method: GET
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [200,400]
+        body_format: json
+
+      loop: "{{getdevice.json | json_query('items[]' )}}"
+      register: getphyinterface
+    - name: Get List details
+      set_fact:
+        intdetail: "{{intdetail| default({})  | combine({item.item.id:item.json| json_query('items[*].id' )})}}"
+      with_items: "{{getphyinterface.results}}"
+    - name: Change Type
+      set_fact:
+        intdetail: "{{intdetail | dict2items}}"
+    - name: Display
+      debug:
+        msg: "{{intdetail}}"
+    - name: Fetch Details of  interface
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/devices/devicerecords/{{item.0.key}}/physicalinterfaces/{{item.1}}"
+        method: GET
+        validate_certs: no
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        body_format: json
+        status_code: [200]
+      with_subelements:
+        - "{{intdetail}}"
+        - value
+      register: getallint
+    - name: Create Inside Security Zone
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/object/securityzones"
+        method: POST
+        validate_certs: no
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        body_format: json
+        status_code: [201]
+        body:
+          type: "SecurityZone"
+          name: "INSIDE"
+          interfaceMode: "ROUTED"
+      register: inseczone
+    - name: Update Interface -Inside
+      uri:
+        url: "{{item.url}}"
+        method: PUT
+        validate_certs: no
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        body_format: json
+        status_code: [202,200]
+        body:
+          mode: "{{item.json.mode}}"
+          name: "{{item.json.name}}"
+          enabled: true
+          ifname: "INSIDE"
+          id: "{{item.json.id}}"
+          securityZone:
+            id: "{{inseczone.json.id}}"
+            type:  "{{inseczone.json.type}}"
+          ipv4: { dhcp: {"enableDefaultRouteDHCP": "true","dhcpRouteMetric": 1}}
+      with_items: "{{getallint.results}}"
+      when: item.json.name == 'GigabitEthernet0/0'
+    - name: Create OUTSIDE Security Zone
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/object/securityzones"
+        method: POST
+        validate_certs: no
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        body_format: json
+        status_code: [201]
+        body:
+          type: "SecurityZone"
+          name: "OUTSIDE"
+          interfaceMode: "ROUTED"
+      register: outseczone
+
+
+    - name: Update Interface -OUTSIDE
+      uri:
+        url: "{{item.url}}"
+        method: PUT
+        validate_certs: no
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        body_format: json
+        status_code: [202,200]
+        body:
+          mode: "{{item.json.mode}}"
+          name: "{{item.json.name}}"
+          enabled: true
+          ifname: "OUTSIDE"
+          id: "{{item.json.id}}"
+          securityZone:
+            id: "{{outseczone.json.id}}"
+            type:  "{{outseczone.json.type}}"
+          ipv4: { dhcp: {"enableDefaultRouteDHCP": "true","dhcpRouteMetric": 1}}
+      with_items: "{{getallint.results}}"
+      when: item.json.name == 'GigabitEthernet0/1'
+    - name: Get Deployments
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/deployment/deployabledevices"
+        method: GET
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [200,400]
+        body_format: json
+      register: deployable
+    - name: Get Timestamp
+      set_fact:
+        stamp: "{{ item.version}}"
+      with_list: "{{deployable.json | json_query('items[]')}}"
+    - name: Value
+      set_fact:
+        devicelist: "{{ getdevice.json | json_query('items[*].id' ) | list}}"
+    - name: Deploy Changes
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/deployment/deploymentrequests"
+        method: POST
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        validate_certs: no
+        status_code: [202,200]
+        body_format: json
+        body:
+          type: "DeploymentRequest"
+          version:  "{{ stamp}}"
+          ignoreWarning: true
+          deviceList: "{{devicelist}}"

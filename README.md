@@ -197,7 +197,7 @@ Meanwhile copy the content of Config_Management to the Jumphost,
 
 ```commandline
 cd Config_Management
-scp .*  madewang@20.228.254.141:~
+scp *  madewang@20.228.254.141:~
 ```
 
 Above statement will copy all the ansible code to the Jumphost, from where FTD and FMCs are reachable.

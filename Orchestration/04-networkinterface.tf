@@ -17,19 +17,19 @@
 //}
 //}
 
-resource   "azurerm_network_interface"   "nicmgmtjumphost"   {
-  name   =   "nic-mgmt-jumphost-${var.prefix}"
-  location   =   var.resource_group_location
-  resource_group_name   =   azurerm_resource_group.rg.name
+# resource   "azurerm_network_interface"   "nicmgmtjumphost"   {
+#   name   =   "nic-mgmt-jumphost-${var.prefix}"
+#   location   =   var.resource_group_location
+#   resource_group_name   =   azurerm_resource_group.rg.name
 
-  ip_configuration   {
-    name   =   "ipconfig-mgmt-jumphost-${var.prefix}"
-    subnet_id   =   azurerm_subnet.mgmtsubnet.id
-    private_ip_address_allocation   =   "Static"
-    private_ip_address = "10.121.10.5"
-    public_ip_address_id   =   azurerm_public_ip.jumphost.id
-  }
-}
+#   ip_configuration   {
+#     name   =   "ipconfig-mgmt-jumphost-${var.prefix}"
+#     subnet_id   =   azurerm_subnet.mgmtsubnet.id
+#     private_ip_address_allocation   =   "Static"
+#     private_ip_address = "10.121.10.5"
+#     public_ip_address_id   =   azurerm_public_ip.jumphost.id
+#   }
+# }
 
 
 resource   "azurerm_network_interface"   "nicmgmtftd"   {

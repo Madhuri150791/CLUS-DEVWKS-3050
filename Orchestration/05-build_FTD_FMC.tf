@@ -63,7 +63,6 @@ resource   "azurerm_linux_virtual_machine"   "ftd"   {
   name                    =   "ftd-${var.prefix}"
   location                =   var.resource_group_location
   resource_group_name     =   azurerm_resource_group.rg.name
-  primary_network_interface_id = azurerm_network_interface.nicmgmtftd.id
   network_interface_ids   =   [ azurerm_network_interface.nicmgmtftd.id, azurerm_network_interface.nicdiagftd.id,azurerm_network_interface.nicinsideftd.id, azurerm_network_interface.nicoutsideftd.id ]
   size                    =   var.ftdmachinetype
   computer_name           =    "vm-ftd"

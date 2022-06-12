@@ -155,7 +155,7 @@
             type:  "{{insec.type}}"
           ipv4: { dhcp: {"enableDefaultRouteDHCP": "true","dhcpRouteMetric": 1}}
       with_items: "{{getallint.results}}"
-      when: item.json.name == 'GigabitEthernet0/0' and inseczone.status == 200
+      when: item.json.name == 'GigabitEthernet0/0' and inseczone.status == 400
 
     - name: Create OUTSIDE Security Zone
       uri:

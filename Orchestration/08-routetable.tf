@@ -11,7 +11,7 @@ resource "azurerm_route_table" "FTD_NIC2" {
     name = "default_inside_route"
     address_prefix = "0.0.0.0/0"
     next_hop_type = "VirtualAppliance"
-    next_hop_in_ip_address = azurerm_network_interface.nicinsidehost.private_ip_address
+    next_hop_in_ip_address = azurerm_network_interface.nicinsideftd.private_ip_address
   }
 }
 

@@ -87,26 +87,28 @@
           type: "SecurityZone"
           name: "INSIDE"
           interfaceMode: "ROUTED"
+      ignore_errors: yes
       register: inseczone
     - name: Get Inside Security Zone
       uri:
-        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/object/securityzones"
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/object/securityzones?name=INSIDE"
         method: GET
         validate_certs: no
         headers:
           "x-auth-access-token": "{{auth_token}}"
           Connection: keep-alive
         body_format: json
-        status_code: [201]
-        body:
-          type: "SecurityZone"
-          name: "INSIDE"
-          interfaceMode: "ROUTED"
-      register: inseczone
-      when:
-        - "{{inseczone.status}}"
+        status_code: [200]
+      register: inseczone1
+      when: inseczone.status == 400
+    - name: Get Inside Zone ID
+      set_fact:
+        insec: "{{item}}"
+      with_items: "{{inseczone1.json | json_query('items[]' )}}"
+      when: inseczone.status == 400
 
-    - name: Update Interface -Inside
+
+    - name: Update Interface -Inside - When Newly built
       uri:
         url: "{{item.url}}"
         method: PUT
@@ -127,7 +129,34 @@
             type:  "{{inseczone.json.type}}"
           ipv4: { dhcp: {"enableDefaultRouteDHCP": "true","dhcpRouteMetric": 1}}
       with_items: "{{getallint.results}}"
-      when: item.json.name == 'GigabitEthernet0/0'
+      ignore_errors: yes
+      when: item.json.name == 'GigabitEthernet0/0' and inseczone.status == 200
+
+
+
+    - name: Update Interface -Inside - Already created
+      uri:
+        url: "{{item.url}}"
+        method: PUT
+        validate_certs: no
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        body_format: json
+        status_code: [202,200]
+        body:
+          mode: "{{item.json.mode}}"
+          name: "{{item.json.name}}"
+          enabled: true
+          ifname: "INSIDE"
+          id: "{{item.json.id}}"
+          securityZone:
+            id: "{{insec.id}}"
+            type:  "{{insec.type}}"
+          ipv4: { dhcp: {"enableDefaultRouteDHCP": "true","dhcpRouteMetric": 1}}
+      with_items: "{{getallint.results}}"
+      when: item.json.name == 'GigabitEthernet0/0' and inseczone.status == 200
+
     - name: Create OUTSIDE Security Zone
       uri:
         url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/object/securityzones"
@@ -142,10 +171,28 @@
           type: "SecurityZone"
           name: "OUTSIDE"
           interfaceMode: "ROUTED"
+      ignore_errors: yes
       register: outseczone
+    - name: Get  OUTSIDE Security Zone
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/object/securityzones?name=OUTSIDE"
+        method: GET
+        validate_certs: no
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        body_format: json
+        status_code: [200]
+      register: outseczone1
+      when: outseczone.status == 400
+    - name: Get Outside Zone ID
+      set_fact:
+        outsec: "{{item}}"
+      with_items: "{{outseczone1.json | json_query('items[]' )}}"
+      when: outseczone.status == 400
 
 
-    - name: Update Interface -OUTSIDE
+    - name: Update Interface -OUTSIDE - New Created 
       uri:
         url: "{{item.url}}"
         method: PUT
@@ -165,8 +212,32 @@
             id: "{{outseczone.json.id}}"
             type:  "{{outseczone.json.type}}"
           ipv4: { dhcp: {"enableDefaultRouteDHCP": "true","dhcpRouteMetric": 1}}
+      ignore_errors: yes
       with_items: "{{getallint.results}}"
-      when: item.json.name == 'GigabitEthernet0/1'
+      when: item.json.name == 'GigabitEthernet0/1' and outseczone.status == 200
+    - name: Update Interface -OUTSIDE - Already Built
+      uri:
+        url: "{{item.url}}"
+        method: PUT
+        validate_certs: no
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        body_format: json
+        status_code: [202,200]
+        body:
+          mode: "{{item.json.mode}}"
+          name: "{{item.json.name}}"
+          enabled: true
+          ifname: "OUTSIDE"
+          id: "{{item.json.id}}"
+          securityZone:
+            id: "{{outsec.id}}"
+            type:  "{{outsec.type}}"
+          ipv4: { dhcp: {"enableDefaultRouteDHCP": "true","dhcpRouteMetric": 1}}
+      with_items: "{{getallint.results}}"
+      when: item.json.name == 'GigabitEthernet0/1' and outseczone.status == 400
+
     - name: Get Deployments
       uri:
         url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/deployment/deployabledevices"

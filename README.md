@@ -5,7 +5,6 @@ Terraform template to deploy a single instance  of Cisco Secure Firewall applian
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 
-
 * [Pre-Requisite](#pre-requisite)
 * [Assumption](#assumption)
 * [HowTo](#how-tos)
@@ -61,6 +60,7 @@ Please refer [here](https://registry.terraform.io/providers/hashicorp/azurerm/la
 
 
 # How-Tos {For Information Only}
+
 1. Identify the VM SourceImage from MarketPlace.
    To identify the VM Source Image we will be using azure cli
    Run following command, to be able to authenticate to install azure-cli
@@ -153,7 +153,6 @@ Please Note: All the above action have been performed already to ease the proces
 
 
 
-
 # Details of the Code
 
 This code is categorized to perform the Orchestration and Config Management for Cisco Secure Firewall.
@@ -176,9 +175,11 @@ The Ansible code will help to perform:
 - Add Routes to the devices
 - Deploy all the changes made to the devices
 
+
 ## Usage
 You need to modify terraform.tfvars files as per your needs. This code will build the Cisco Secure Firewall as shown below
 ![Single Instance](images/topology.png?raw=true "Single Instance")
+
 
 Then perform the following commands on the root folder:
 
@@ -234,6 +235,7 @@ Once you are able to get the response from FMC run the ansible commands.
 
 Make sure the FMC IP defined in hosts file is correct and FTD IP defined in vars.yaml is correct.
 Since you will be manually running this ansible playbook, hence please wait 5-10 min between each playbook execution so that the tasks can be completed in FMC.
+
 ```commandline
 cd ./Config_Management
 ./commands.sh
@@ -242,7 +244,6 @@ ansible-playbook -i hosts setup_device.yaml
 ansible-playbook -i hosts policy.yaml
 ansible-playbook -i hosts route.yaml
 ```
-
 
 ```commandline
 - `terraform destroy -auto-approve` to destroy the built infrastructure
@@ -337,10 +338,12 @@ The  list contains maps, where each object represents a Network and associated C
 | versiontestvm | Variable to define Spefic Version details for Test Machine| string | -| yes |
 
 
+
 ## Compatibility
 
 This module is meant for use with Terraform 0.13+ and tested using Terraform 1.0+.
 If you find incompatibilities using Terraform `>=0.13`, please open an issue.
+
 
 
 # Author
@@ -348,6 +351,7 @@ Modules are maintained by Madhuri Dewangan (madewang@cisco.com, madhuri.dewangan
 
 # Disclaimer
 This terraform Template is not an officially supported Cisco Template. This is built based on Customer Interaction and Requirements. For official Cisco NGFWv documentation visit the [page](https://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/gcp/ftdv-gcp-gsg/ftdv-gcp-deploy.html).
+
 
 
 

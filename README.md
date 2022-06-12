@@ -147,7 +147,7 @@ Please Note: All the above action have been performed already to ease the proces
 
 
 # Changes to be made in the Template for consuming
-1. Change following contents in terraform.tfvars
+1. Change following contents in terraform.tfvars as per your needs ![changes](images/variable.png?raw=true "Required Changes")
 
 
 

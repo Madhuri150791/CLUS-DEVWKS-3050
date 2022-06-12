@@ -2,7 +2,7 @@
   "EULA": "accept",
   "AdminPassword": "M@dhuri123",
   "Hostname": "DEVWKS3050",
-  "FmcIp": "10.121.10.4",
+  "FmcIp": "10.0.0.4",
   "FmcRegKey":"12345",
   "FirewallMode": "routed",
   "ManageLocally":"No"

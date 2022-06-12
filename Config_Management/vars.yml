@@ -5,9 +5,11 @@ zones:
   - name: "INSIDE"
   - name: "OUTSIDE"
 gcpinside:
-    ip: "10.121.12.1"
-    name: "inside-gw"
+  ip: "10.121.12.1"
+  name: "inside-gw-madewang"
 gcpoutside:
-    ip: "10.121.13.1"
-    name: "outside-gw"
-
+  ip: "10.121.13.1"
+  name: "outside-gw-madewang"
+network:
+  name: "madewang-default"
+  value: "0.0.0.0/0"

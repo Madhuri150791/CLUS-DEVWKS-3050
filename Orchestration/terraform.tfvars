@@ -1,5 +1,7 @@
 resource_group_location = "eastus"
 prefix = "devwks3050"
+subscription = "60c7e748-af46-4ad0-bcdf-0c518aa20c9c"
+tenant = "5ae1af62-9505-4097-a69a-c1553ef7840e"
 resource_group_name_prefix = "devwks3050"
 vnet_address-space = "10.121.0.0/16"
 subnet-mgmt = "10.121.10.0/24"

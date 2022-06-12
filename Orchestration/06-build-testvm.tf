@@ -29,6 +29,38 @@ resource   "azurerm_linux_virtual_machine"   "insidehost"   {
 
 }
 
+
+#########################################
+#      Outside Host
+#########################################
+
+resource   "azurerm_linux_virtual_machine"   "outsidehost"   {
+  name                    =   "outsidehost"
+  location                =   var.resource_group_location
+  resource_group_name     =   azurerm_resource_group.rg.name
+  network_interface_ids   =   [ azurerm_network_interface.nicoutsidehost.id]
+  size                    =   var.vmmachinetype
+  admin_username          =   "adminuser"
+  admin_password          =   "Password123!"
+  computer_name           =    "outsidehost"
+  disable_password_authentication = false
+  source_image_reference   {
+    publisher   =   var.publishervm
+    offer       =   var.offertestvm
+    sku         =   var.skutestvm
+    version     =   var.versiontestvm
+  }
+
+  os_disk  {
+    name = "disk-outside-${var.prefix}"
+    caching             =   "ReadWrite"
+    storage_account_type   =   "Standard_LRS"
+
+  }
+
+
+}
+
 #########################################
 #      Jumphost Host
 #########################################

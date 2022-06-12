@@ -63,7 +63,7 @@ resource   "azurerm_network_interface"   "nicinsideftd"   {
   name   =   "nic-inside-ftd--${var.prefix}"
   location   =   var.resource_group_location
   resource_group_name   =   azurerm_resource_group.rg.name
-
+  enable_ip_forwarding = true
   ip_configuration   {
     name   =   "ipconfig-inside-ftd-${var.prefix}"
     subnet_id   =   azurerm_subnet.insidesubnet.id
@@ -76,7 +76,7 @@ resource   "azurerm_network_interface"   "nicinsidehost"   {
   name   =   "nic-inside-host--${var.prefix}"
   location   =   var.resource_group_location
   resource_group_name   =   azurerm_resource_group.rg.name
-
+  enable_ip_forwarding = true
   ip_configuration   {
     name   =   "ipconfig-insidehost-${var.prefix}"
     subnet_id   =   azurerm_subnet.insidesubnet.id
@@ -90,9 +90,22 @@ resource   "azurerm_network_interface"   "nicoutsideftd"   {
   name   =   "nic-outside-ftd--${var.prefix}"
   location   =   var.resource_group_location
   resource_group_name   =   azurerm_resource_group.rg.name
-
+  enable_ip_forwarding = true
   ip_configuration   {
     name   =   "ipconfig-outside-ftd-${var.prefix}"
+    subnet_id   =   azurerm_subnet.outsidesubnet.id
+    private_ip_address_allocation   =   "Dynamic"
+
+  }
+}
+
+resource   "azurerm_network_interface"   "nicoutsidehost"   {
+  name   =   "nic-outside-host--${var.prefix}"
+  location   =   var.resource_group_location
+  resource_group_name   =   azurerm_resource_group.rg.name
+  enable_ip_forwarding = true
+  ip_configuration   {
+    name   =   "ipconfig-outside-host-${var.prefix}"
     subnet_id   =   azurerm_subnet.outsidesubnet.id
     private_ip_address_allocation   =   "Dynamic"
 

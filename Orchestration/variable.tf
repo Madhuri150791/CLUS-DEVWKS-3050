@@ -1,4 +1,15 @@
 #################################
+#       Subscription and Tenant
+#################################
+variable "subscription"{
+  type = string
+  description = "Subscription ID of where resources are to be created"
+}
+variable "tenant" {
+  type = string
+  description = "Tenant ID of where resources are to be created"
+}
+#################################
 #       Prefix
 #################################
 variable "resource_group_name_prefix" {

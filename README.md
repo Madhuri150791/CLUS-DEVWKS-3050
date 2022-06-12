@@ -1,29 +1,66 @@
 # Cisco Firepower Threat Defense Deployment in Azure to secure transaction between VNs
-Terraform module to deploy a single instance  of Cisco Secure Firewall appliances in Azure.
+Terraform template to deploy a single instance  of Cisco Secure Firewall appliances in Azure, and demo automation for VNET Peering for FTD FMC communication.
 
 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 
+
+* [Pre-Requisite](#pre-requisite)
+* [Assumption](#assumption)
+* [HowTo](#how-tos)
+* [Usage](#usage)
+* [RequiredChanges](#changes-to-be-made-in-the-template-for-consuming)
 * [Author](#author)
 * [Disclaimer](#disclaimer)
-* [Pre-Requisite](#pre-requisite)
-* [Usage](#usage)
-* [HowTo](#how-tos)
-* [RequiredChanges](#changes-to-be-made-in-the-template-for-consuming)
-* [Assumption](#assumption)
 
 
 # Pre-Requisite
 Make sure the client from where the template is being executed has terraform installed.
 
-To check if the terraform is installed or not use following command in your CLI:
+Terraform can be installed from :
+
+https://learn.hashicorp.com/tutorials/terraform/install-cli
+
+Select the host OS on which you are installing Terraform 
+
+To check if  terraform is installed or not use following command in your CLI:
 ```commandline
 terraform --version
 ```
 
+### Installed Software
+- [Terraform](https://www.terraform.io/downloads.html)
+- [Terraform Provider for Azure](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
+- [Terraform Provider for PKI](https://registry.terraform.io/providers/hashicorp/tls/latest/docs)
+- [azure-cli](https://docs.microsoft.com/en-us/cli/azure/)
 
-# How-Tos
+### Azure Account
+User must be having their own Azure Account, to test the template described in this Demo.
+
+### Authenticate Terraform using Service Principal
+
+This method of authentication is preferred when users are using 3rd Party server for execution for example CI servers.
+
+Please refer [here](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_client_secret) for using the Client Secrets.
+
+
+### Authenticate Terraform using Azure CLI
+
+This method of authentication is preferred when user is using the template locally.
+
+This demo will be using Azure CLI authentication mechanism for estiblishing the communication between Terraform and Azure Cloud.
+
+Please refer [here](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/azure_cli) for details about local authentication.
+
+# Assumption
+- User will be having Azure Subscription with them to run the template.
+- Template will be used for green field deployment. This template will be creating resources in a separate resource-group.
+- User will have to modify the naming convention of the resources as per the Naming Conventions.
+- User will be using Azure CLi authentication mechanism.
+
+
+# How-Tos {For Information Only}
 1. Identify the VM SourceImage from MarketPlace.
    To identify the VM Source Image we will be using azure cli
    Run following command, to be able to authenticate to install azure-cli
@@ -106,17 +143,15 @@ az vm image terms accept --urn  cisco:cisco-fmcv:fmcv-azure-byol:71090.0.0
 az vm image terms accept --urn  cisco:cisco-ftdv:ftdv-azure-payg:71092.0.0
 ```
 
-
+Please Note: All the above action have been performed already to ease the process of Automation. Above is for info only.
 
 
 # Changes to be made in the Template for consuming
-1. Change the contents in variable.tf and terraform.tfvars
-2. Follow through main.tf . All the changes required and necessary has been explained there.
+1. Change following contents in terraform.tfvars
 
-# Assumption
-- This template is developed keeping in mind that CLoud Team will be using this template for the fresh deployement in GCP, where none of the Networking resources are already built.
-- User will have to modify the naming convention of the resources as per the Policy.
-- User of this template will be having the access key and secret key for the service account with required permission to build the instances in GCP.
+
+
+
 
 
 # Details of the Code
@@ -132,7 +167,7 @@ It supports creating:
 - Azure Network Security Group
 - Route Tables
 - Single Instance of Cisco Secure Firewall
-- Single Instance of Firepower Management Center
+- VNET Peer to communicate with FMC [present in separate resource group]
 
 The Ansible code will help to perform:
 - Register newly created device to FMC
@@ -141,19 +176,9 @@ The Ansible code will help to perform:
 - Add Routes to the devices
 - Deploy all the changes made to the devices
 
-
-## Compatibility
-
-This module is meant for use with Terraform 0.13+ and tested using Terraform 1.0+.
-If you find incompatibilities using Terraform `>=0.13`, please open an issue.
-
-If you haven't [upgraded][terraform-0.13-upgrade] and need a Terraform
-0.12.x-compatible version of this module, the last released version
-intended for Terraform 0.12.x is [2.6.0].
-
 ## Usage
 You need to modify terraform.tfvars files as per your needs. This code will build the Cisco Secure Firewall as shown below
-![Single Instance](images/SingleInstance.png?raw=true "Single Instance")
+![Single Instance](images/topology.png?raw=true "Single Instance")
 
 Then perform the following commands on the root folder:
 
@@ -163,15 +188,52 @@ cd Orchestration
 
 - `terraform init` to get the plugins
 - `terraform plan` to see the infrastructure plan
-- `terraform apply` to apply the infrastructure build
-- `terraform destroy` to destroy the built infrastructure
+- `terraform apply -auto-approve` to apply the infrastructure build
+
+Wait for 10-15 mins for the FTD to comeup.
+
+Meanwhile copy the content of Config_Management to the Jumphost,
+
+```commandline
+cd Config_Management
+scp .*  madewang@20.228.254.141:~
+```
+
+Above statement will copy all the ansible code to the Jumphost, from where FTD and FMCs are reachable.
+
+```ignorelang
+Ansible is utilizing FMC REST API for automating the Config Management part.
+
+Make sure the details of the IP are mentioned correctly in the hosts file and vars.yaml file
+vars.yaml: This file contains the details of modification which might be required for Configuration within FTD.
+credentials.yaml: This file contains the details of the FMC and parameters required to successfully access the REST API of FMC
+```
+To validate, run the following command
+
+```commandline
+cat hosts
+cat vars.yaml
+cat credentials.yaml
+```
+
+Validate Ansible is installed in the jumphost
+
+```commandline
+ansible --help
+```
+
+If Ansible is not installed run
+
+```commandline
+./commands.sh
+```
 
 Wait for 15-20 mins for FMC and FTD to come up.
 
 Once you are able to get the response from FMC run the ansible commands.
 
 Make sure the FMC IP defined in hosts file is correct and FTD IP defined in vars.yaml is correct.
-
+Since you will be manually running this ansible playbook, hence please wait 5-10 min between each playbook execution so that the tasks can be completed in FMC.
 ```commandline
 cd ./Config_Management
 ./commands.sh
@@ -180,6 +242,13 @@ ansible-playbook -i hosts setup_device.yaml
 ansible-playbook -i hosts policy.yaml
 ansible-playbook -i hosts route.yaml
 ```
+
+
+```commandline
+- `terraform destroy -auto-approve` to destroy the built infrastructure
+```
+
+
 
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
@@ -268,22 +337,17 @@ The  list contains maps, where each object represents a Network and associated C
 | versiontestvm | Variable to define Spefic Version details for Test Machine| string | -| yes |
 
 
+## Compatibility
 
+This module is meant for use with Terraform 0.13+ and tested using Terraform 1.0+.
+If you find incompatibilities using Terraform `>=0.13`, please open an issue.
 
-## Requirements
-### Installed Software
-- [Terraform](https://www.terraform.io/downloads.html)
-- [Terraform Provider for Azure](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
-- [Terraform Provider for PKI](https://registry.terraform.io/providers/hashicorp/tls/latest/docs)
-- [azure-cli](https://docs.microsoft.com/en-us/cli/azure/) 
-
-### Configure a Service Account
 
 # Author
 Modules are maintained by Madhuri Dewangan (madewang@cisco.com, madhuri.dewangan.15@gmail.com)
 
 # Disclaimer
-This terraform Template is not an officially supported Cisco product. For official Cisco NGFWv documentation visit the [page](https://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/gcp/ftdv-gcp-gsg/ftdv-gcp-deploy.html).
+This terraform Template is not an officially supported Cisco Template. This is built based on Customer Interaction and Requirements. For official Cisco NGFWv documentation visit the [page](https://www.cisco.com/c/en/us/td/docs/security/firepower/quick_start/gcp/ftdv-gcp-gsg/ftdv-gcp-deploy.html).
 
 
 

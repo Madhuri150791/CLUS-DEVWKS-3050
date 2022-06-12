@@ -88,6 +88,24 @@
           name: "INSIDE"
           interfaceMode: "ROUTED"
       register: inseczone
+    - name: Get Inside Security Zone
+      uri:
+        url: "https://{{ ansible_host  }}/{{ resource_path }}/{{ auth.domain_uuid}}/object/securityzones"
+        method: GET
+        validate_certs: no
+        headers:
+          "x-auth-access-token": "{{auth_token}}"
+          Connection: keep-alive
+        body_format: json
+        status_code: [201]
+        body:
+          type: "SecurityZone"
+          name: "INSIDE"
+          interfaceMode: "ROUTED"
+      register: inseczone
+      when:
+        - "{{inseczone.status}}"
+
     - name: Update Interface -Inside
       uri:
         url: "{{item.url}}"

@@ -3,19 +3,19 @@
 #########################################
 #      Network Interfaces
 #########################################
-resource   "azurerm_network_interface"   "nicmgmtfmc"   {
-  name   =   "nic-mgmt-fmc-${var.prefix}"
-  location   =   var.resource_group_location
-  resource_group_name   =   azurerm_resource_group.rg.name
-
-  ip_configuration   {
-    name   =   "ipconfig-mgmt-fmc-${var.prefix}"
-    subnet_id   =   azurerm_subnet.mgmtsubnet.id
-    private_ip_address_allocation   =   "Static"
-    private_ip_address = "10.121.10.4"
-    public_ip_address_id   =   azurerm_public_ip.fmcpubip.id
-}
-}
+//resource   "azurerm_network_interface"   "nicmgmtfmc"   {
+//  name   =   "nic-mgmt-fmc-${var.prefix}"
+//  location   =   var.resource_group_location
+//  resource_group_name   =   azurerm_resource_group.rg.name
+//
+//  ip_configuration   {
+//    name   =   "ipconfig-mgmt-fmc-${var.prefix}"
+//    subnet_id   =   azurerm_subnet.mgmtsubnet.id
+//    private_ip_address_allocation   =   "Static"
+//    private_ip_address = "10.121.10.4"
+//    public_ip_address_id   =   azurerm_public_ip.fmcpubip.id
+//}
+//}
 
 resource   "azurerm_network_interface"   "nicmgmtjumphost"   {
   name   =   "nic-mgmt-jumphost-${var.prefix}"

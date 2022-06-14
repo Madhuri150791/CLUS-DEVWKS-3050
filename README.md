@@ -180,6 +180,10 @@ The Ansible code will help to perform:
 You need to modify terraform.tfvars files as per your needs. This code will build the Cisco Secure Firewall as shown below
 ![Single Instance](images/topology.png?raw=true "Single Instance")
 
+```html
+Some of the resources in the templates are commented to achieve the mentioned Lab Topology. But incase you need to create them, feel free to uncomment and use as per requirement.
+```
+
 
 Then perform the following commands on the root folder:
 
